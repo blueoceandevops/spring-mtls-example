@@ -1,0 +1,75 @@
+#server:
+#  port: 7080
+
+
+# For Spring Actuator /info endpoint
+info:
+    artifact: spring-tls-server
+    name: spring-tls-server
+    description: Spring TLS Server Example
+    version: 1.0.0
+
+#management:
+#  security:
+#    enabled: false
+#  health:
+#    consul:
+#      enabled: false   # must be false to pass /health check
+
+#Exposes Spring actuator endpoints
+management:
+  health:
+    diskspace:
+      enabled: true
+    db:
+      enabled: true
+    defaults:
+      enabled: true
+    details:
+      enabled: true
+    application:
+      enabled: true
+  endpoint:
+    health:
+      enabled: true
+#      show-details: true
+  endpoints:
+    web:
+      base-path: /
+      expose: "*"
+
+
+
+#logging:
+#  level:
+#    org.springframework: DEBUG
+
+
+# Enable SSL
+server:
+  port: 8443
+  ssl:
+    trust-store-type: PKCS12
+    trust-store: classpath:config/server-keystore.p12
+    trust-store-password: server
+    key-store-type: PKCS12
+    key-store: classpath:config/server-keystore.p12
+    key-store-password: server
+    key-alias: server
+    client-auth: need
+
+# Setup security
+security:
+  auth:
+    endpoints:
+      endpoint1:
+        path: /books
+        methods: POST
+        roles: BOOK_WRITE
+      endpoint2:
+        path: /books/**
+        methods: GET
+        roles: BOOK_WRITE, BOOK_READ
+    users:
+      Client:
+        roles: BOOK_WRITE, BOOK_READ
