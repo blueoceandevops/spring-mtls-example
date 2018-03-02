@@ -15,7 +15,6 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 /**
@@ -73,6 +72,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                             .subjectPrincipalRegex("CN=(.*?)(?:,|$)")
                             .userDetailsService(userDetailsService())
                             .and().csrf().disable();
+
                     log.info("Adding security for path " + value.getPath()
                             + " and method " + method);
                 }
@@ -87,30 +87,28 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 SessionCreationPolicy.STATELESS);
     }
 
+    @Override
     @Bean
     public UserDetailsService userDetailsService() {
-        return new UserDetailsService() {
-            @Override
-            public UserDetails loadUserByUsername(String username) {
-                log.info("Trying to load user: " + username);
-                System.out.println("------- Trying to load user: " + username);
+        return username -> {
+            log.info("Trying to load user: " + username);
 
-                SecurityAuthProperties.User
-                        user = properties.getUsers().get(username);
-                if (user != null) {
-                    log.info("Successful in adding user " + username);
+            SecurityAuthProperties.User
+                    user = properties.getUsers().get(username);
+            if (user != null) {
+                log.info("Successful in adding user " + username);
 
-                    return new User(username, "",
-                            AuthorityUtils.createAuthorityList(
-                                    user.getRoles()));
-                }
-
-                log.info("Failed to add user " + username);
-                return null;
+                return new User(username, "",
+                        AuthorityUtils.createAuthorityList(
+                                user.getRoles()));
             }
+
+            log.info("Failed to add user " + username);
+            return null;
         };
     }
 
+    // NOT WORKING
     @Override
     public void configure(WebSecurity web) throws Exception {
         web.ignoring().antMatchers("/v2/api-docs/**");

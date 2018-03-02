@@ -2,8 +2,11 @@ package com.basaki.server.config;
 
 import com.basaki.server.ServerApplication;
 import io.restassured.RestAssured;
+import io.restassured.config.RestAssuredConfig;
+import io.restassured.config.SSLConfig;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -11,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.Resource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -35,25 +39,48 @@ public class SwaggerConfigurationFunctionalTests {
     @Value("${local.server.port}")
     private Integer port;
 
-    @Value("${server.ssl.key-store}")
-    private String pathToJks;
+    @Value("${client.ssl.trust-store-type}")
+    private String trustStoreType;
 
-    @Value("${server.ssl.key-store-password}")
-    private String password;
+    @Value("${client.ssl.trust-store}")
+    private Resource trustStore;
+
+    @Value("${client.ssl.trust-store-password}")
+    private String trustStorePassword;
+
+    @Value("${client.ssl.key-store-type}")
+    private String keyStoreType;
+
+    @Value("${client.ssl.key-store}")
+    private Resource keyStore;
+
+    @Value("${client.ssl.key-store-password}")
+    private String keyStorePassword;
+
+    private RestAssuredConfig clientConfig;
 
     @Autowired
     ApplicationContext context;
 
     @Before
-    public void startUp() {
+    public void startUp() throws IOException {
         RestAssured.useRelaxedHTTPSValidation();
-        RestAssured.config().getSSLConfig()
-                .with().keyStore(pathToJks, password);
+
+        clientConfig =
+                RestAssuredConfig.config().sslConfig(SSLConfig.sslConfig()
+                        .allowAllHostnames()
+                        .keystoreType(keyStoreType)
+                        .keyStore(keyStore.getURL().getFile(),
+                                keyStorePassword)
+                        .trustStoreType(trustStoreType)
+                        .trustStore(trustStore.getURL().getFile(),
+                                trustStorePassword));
     }
 
     @Test
     public void testApi() {
         Response response = given()
+                .config(clientConfig)
                 .contentType(ContentType.JSON)
                 .baseUri("https://localhost")
                 .port(port)
